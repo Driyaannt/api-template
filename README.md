@@ -1,37 +1,142 @@
 # backend-driya
 
-Express + TypeScript API starter in a pnpm workspace, paired with a Vite React dashboard and OpenAPI-driven API Explorer.
+Starter API Express + TypeScript dengan PostgreSQL raw query dan dashboard API Explorer berbasis React. Explorer menampilkan katalog endpoint, mengirim request, menyimpan body/path/hasil request per pengguna, dan menyediakan pencarian endpoint.
 
-## Quick start
+## Fitur saat ini
 
-```bash
-corepack enable
-pnpm install
-Copy-Item .env.example .env # PowerShell
-pnpm docker:up
-pnpm db:migrate
-pnpm db:seed
-pnpm dev
+- Express 5 + TypeScript strict + raw PostgreSQL (`pg` pool dan parameterized query).
+- Login JWT, refresh token HTTP-only cookie, register, logout, dan profil aktif.
+- API Explorer dengan login wajib, sidebar searchable/scrollable, request body template, Bearer token otomatis, copy response, serta request history per user.
+- Katalog endpoint tersimpan di database (`api_endpoints`) dan disinkronkan dari source metadata.
+- Modul Products, Master Shoes, dan Master Helm.
+- Raw SQL migration, rollback, status, seed idempotent, dan Docker Compose.
+
+## Prasyarat
+
+- Node.js 24+ (atau LTS yang mendukung project).
+- PostgreSQL aktif di `localhost:5432`.
+- Corepack. Pada Windows tanpa hak Administrator, gunakan `corepack pnpm` di setiap command.
+
+## Instalasi lokal
+
+```powershell
+cd C:\Data\code\backend-driya-template
+corepack pnpm install
+Copy-Item .env.example .env
 ```
 
-API: `http://localhost:3000/api/v1`; web: `http://localhost:5173`; Mailpit: `http://localhost:8025`.
+Buat database PostgreSQL bila belum ada:
 
-The development administrator comes from `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` (the example values are `admin@example.test` / `ChangeMe123!`). Change them before deploying.
+```sql
+CREATE DATABASE backend_driya;
+```
 
-## Architecture
+Atur `.env` sesuai PostgreSQL lokal Anda. Untuk user `postgres` tanpa password:
 
-`route/controller → service → repository contract → adapter`. The active adapter comes from `DB_ACCESS_MODE`. The completed adapter is `raw` (`pg` pool, parameter binding, transactions, migration runner, and repeatable seed). Prisma and Sequelize are intentionally not represented as working adapters yet: their directory/schema extension point is present, but the factory rejects them rather than pretending functionality.
+```env
+DATABASE_URL=postgresql://postgres@localhost:5432/backend_driya
+```
 
-Raw migrations live in `database/migrations/raw`; `pnpm db:migrate`, `pnpm db:migrate:status`, and `pnpm db:migrate:rollback` manage `schema_migrations`. `pnpm setup -- --access=raw` creates `.env` and runs migration. Use a separate `DATABASE_URL` for testing.
+Lalu siapkan schema dan data awal:
 
-## Modules and endpoints
+```powershell
+corepack pnpm db:migrate
+corepack pnpm db:seed
+corepack pnpm dev
+```
 
-Authentication endpoints available now: register, login, refresh, logout, and `GET /auth/me`, in addition to health, ready, and `/openapi.json`. Add a module by defining its entity and repository contract, implementing it once per adapter, selecting it in a factory, then mounting validated routes. Add OpenAPI path metadata in the same module: the dashboard reads it from `/openapi.json`, so endpoints do not need separate frontend registration.
+Dashboard: `http://localhost:5173`  
+API: `http://localhost:3000/api/v1`  
+Health check: `http://localhost:3000/api/v1/health`
 
-## Commands
+Login development:
 
-`pnpm dev`, `pnpm build`, `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm db:migrate`, `pnpm db:seed`, `pnpm docker:up`, and `pnpm docker:down` are available from root. `db:generate` and `db:studio` are Prisma-only commands.
+```text
+Email: admin@example.test
+Password: ChangeMe123!
+```
 
-## Security notes
+Ubah credential dan semua JWT secret sebelum deployment.
 
-Passwords are Argon2 hashes; refresh tokens are opaque, HTTP-only cookies and only their SHA-256 hashes are stored. Raw SQL is parameterized and its pool is shut down gracefully. Production deployments must set unique, strong JWT values, `COOKIE_SECURE=true`, and a narrow `CORS_ORIGIN`.
+## API Explorer
+
+Masuk melalui `/login`, kemudian buka `/explorer`.
+
+- Pilih endpoint pada sidebar atau cari berdasarkan nama, path, method, maupun modul.
+- Untuk endpoint POST/PUT/PATCH non-autentikasi, body draft disimpan otomatis setelah Anda berhenti mengetik.
+- Hasil request, body, serta path terakhir disimpan per user di `api_request_history`.
+- Request Login/Register dan respons autentikasi tidak disimpan demi mencegah password/token tersimpan di database.
+- Untuk endpoint dengan `{id}`, ganti placeholder dengan UUID dari endpoint list.
+
+## Endpoint utama
+
+| Method | Path | Keterangan |
+| --- | --- | --- |
+| POST | `/auth/register` | Registrasi pengguna |
+| POST | `/auth/login` | Login dan access token |
+| POST | `/auth/refresh` | Refresh token |
+| POST | `/auth/logout` | Logout |
+| GET | `/auth/me` | Profil aktif (Bearer token) |
+| GET/POST | `/products` | List dan tambah product |
+| GET | `/products/{id}` | Detail product |
+| GET/POST | `/master/shoes` | Master sepatu |
+| GET | `/master/shoes/{id}` | Detail sepatu |
+| GET/POST | `/master/helm` | Master helm |
+| GET | `/api-catalog` | Endpoint untuk sidebar Explorer |
+| GET/PUT | `/api-history` | Riwayat request Explorer |
+
+Semua path di atas memakai prefix `/api/v1`.
+
+## Database dan migration
+
+Migration berada di `database/migrations/raw`. Migration yang sudah ada membuat users/roles, products, katalog API, history request, master shoes, serta master helm.
+
+```powershell
+corepack pnpm db:migrate
+corepack pnpm db:migrate:status
+corepack pnpm db:migrate:rollback
+corepack pnpm db:seed
+```
+
+Tabel penting:
+
+- `api_endpoints`: metadata endpoint untuk sidebar Explorer.
+- `api_request_history`: body draft, path, status, dan respons terakhir per user + endpoint.
+- `shoe_masters`: database master sepatu.
+- `helm`: database master helm.
+
+## Menambahkan API baru
+
+1. Buat migration bila API membutuhkan tabel baru.
+2. Tambahkan route/module backend lalu mount di `apps/api/src/app.ts`.
+3. Tambahkan metadata endpoint ke `apps/api/src/modules/catalog/catalog.definition.ts`.
+4. Sinkronkan katalog:
+
+```powershell
+corepack pnpm api:catalog:sync
+```
+
+Endpoint tersebut kemudian muncul otomatis di Explorer. `requestExample` di katalog menjadi body template yang terlihat di UI.
+
+## Command
+
+```powershell
+corepack pnpm dev
+corepack pnpm build
+corepack pnpm typecheck
+corepack pnpm lint
+corepack pnpm test
+corepack pnpm db:migrate
+corepack pnpm db:seed
+corepack pnpm api:catalog:sync
+corepack pnpm docker:up
+corepack pnpm docker:down
+```
+
+Jika `pnpm` global tersedia, awalan `corepack` dapat dihilangkan. Untuk mengaktifkannya di Windows, jalankan PowerShell sebagai Administrator dan gunakan `corepack enable`.
+
+## Arsitektur dan keamanan
+
+Alur backend adalah `route → service → repository contract → adapter`. Adapter raw yang aktif memakai PostgreSQL pool, query parameterized, transaksi, dan graceful shutdown. Prisma/Sequelize belum menjadi adapter fungsional.
+
+Password disimpan dengan Argon2; refresh token disimpan dalam bentuk hash; akses database menggunakan parameter binding. Jangan memasukkan secret nyata ke repository atau body template katalog.
