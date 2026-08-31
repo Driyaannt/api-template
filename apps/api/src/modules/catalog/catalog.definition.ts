@@ -131,7 +131,18 @@ export const apiEndpointDefinitions: ApiEndpointDefinition[] = [
     description: "Add master shoe data",
     module: "Master Shoes",
     requiresAuth: true,
-    requestExample: { code: "NIKE-AIR-001", name: "Air Runner", brand: "Nike", category: "Running", gender: "UNISEX", color: "White", sizeEu: 42, price: 1299000, stock: 20, status: "ACTIVE" },
+    requestExample: {
+      code: "NIKE-AIR-001",
+      name: "Air Runner",
+      brand: "Nike",
+      category: "Running",
+      gender: "UNISEX",
+      color: "White",
+      sizeEu: 42,
+      price: 1299000,
+      stock: 20,
+      status: "ACTIVE",
+    },
   },
   {
     method: "GET",
@@ -143,21 +154,29 @@ export const apiEndpointDefinitions: ApiEndpointDefinition[] = [
     requestExample: null,
   },
 
-  // testtt
+  // helm
   {
     method: "POST",
-    path: "/products-list",
-    name: "buat product",
-    description: "Create a product. Draft body is saved to your account.",
-    module: "Products",
+    path: "/master/helm",
+    name: "Create helm master",
+    description: "Add master helm data",
+    module: "Master Helm",
     requiresAuth: true,
     requestExample: {
-      name: "papan dada",
-      sku: "1231231",
-      description: "papanpapan",
-      price: 899000,
-      stock: 10,
-      status: "ACTIVE",
+      code: "HELM-AIR-001",
+      nama: "Air Runner",
+      title: "Helm Air Runner",
     },
+  },
+  
+  // list helm
+  {
+    method: "GET",
+    path: "/master/helm",
+    name: "List helm master",
+    description: "List all master helm records",
+    module: "Master Helm",
+    requiresAuth: false,
+    requestExample: null,
   },
 ];
