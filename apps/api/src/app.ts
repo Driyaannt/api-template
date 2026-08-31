@@ -10,6 +10,7 @@ import { env } from "./config/env.js";
 import { productsRouter } from "./modules/products/products.routes.js";
 import { catalogRouter } from "./modules/catalog/catalog.routes.js";
 import { historyRouter } from "./modules/catalog/history.routes.js";
+import { shoesRouter } from "./modules/shoes/shoes.routes.js";
 export const app = express();
 app.use((req, _res, next) => {
   req.requestId = randomUUID();
@@ -54,6 +55,7 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/products", productsRouter);
 app.use("/api/v1/api-catalog", catalogRouter);
 app.use("/api/v1/api-history", historyRouter);
+app.use("/api/v1/master/shoes", shoesRouter);
 app.use((_req, _res, next) =>
   next(new AppError(404, "NOT_FOUND", "Route not found")),
 );

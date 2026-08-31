@@ -115,6 +115,34 @@ export const apiEndpointDefinitions: ApiEndpointDefinition[] = [
     requestExample: null,
   },
 
+  {
+    method: "GET",
+    path: "/master/shoes",
+    name: "List shoe master",
+    description: "List all master shoe records",
+    module: "Master Shoes",
+    requiresAuth: false,
+    requestExample: null,
+  },
+  {
+    method: "POST",
+    path: "/master/shoes",
+    name: "Create shoe master",
+    description: "Add master shoe data",
+    module: "Master Shoes",
+    requiresAuth: true,
+    requestExample: { code: "NIKE-AIR-001", name: "Air Runner", brand: "Nike", category: "Running", gender: "UNISEX", color: "White", sizeEu: 42, price: 1299000, stock: 20, status: "ACTIVE" },
+  },
+  {
+    method: "GET",
+    path: "/master/shoes/{id}",
+    name: "Shoe master detail",
+    description: "Read a shoe master record by UUID",
+    module: "Master Shoes",
+    requiresAuth: false,
+    requestExample: null,
+  },
+
   // testtt
   {
     method: "POST",
