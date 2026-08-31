@@ -1,0 +1,2 @@
+import type { User } from './auth.types.js';
+export interface AuthRepository { findByEmail(email: string): Promise<(User & { passwordHash: string }) | null>; findById(id: string): Promise<User | null>; create(input: { name: string; email: string; passwordHash: string }): Promise<User>; storeRefreshToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void>; consumeRefreshToken(tokenHash: string): Promise<string | null>; revokeRefreshToken(tokenHash: string): Promise<void>; }

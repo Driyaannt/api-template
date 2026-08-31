@@ -1,0 +1,13 @@
+import argon2 from 'argon2'; import { SignJWT, jwtVerify } from 'jose';
+import { env } from '../../config/env.js'; import { AppError } from '../../errors/app-error.js'; import { hashToken, randomToken } from '../../utils/crypto.js'; import type { AuthRepository } from './auth.repository.js'; import type { User } from './auth.types.js';
+const accessKey = new TextEncoder().encode(env.JWT_ACCESS_SECRET); const refreshKey = new TextEncoder().encode(env.JWT_REFRESH_SECRET);
+export class AuthService { constructor(private readonly repo: AuthRepository) {}
+ async register(input: { name:string; email:string; password:string }) { if (await this.repo.findByEmail(input.email)) throw new AppError(409,'EMAIL_EXISTS','Email is already registered'); return this.repo.create({ name: input.name, email: input.email, passwordHash: await argon2.hash(input.password) }); }
+ async login(email: string, password: string) { const candidate=await this.repo.findByEmail(email); if (!candidate || !(await argon2.verify(candidate.passwordHash,password))) throw new AppError(401,'INVALID_CREDENTIALS','Invalid email or password'); const { passwordHash: _, ...user }=candidate; return { user, accessToken: await this.access(user), refreshToken: await this.issueRefresh(user) }; }
+ async refresh(token:string) { try { const userId=await this.repo.consumeRefreshToken(hashToken(token)); if(!userId) throw new Error('revoked'); const user=await this.repo.findById(userId); if(!user) throw new Error('not found'); return { user, accessToken: await this.access(user), refreshToken: await this.issueRefresh(user) }; } catch { throw new AppError(401,'INVALID_REFRESH_TOKEN','Refresh token is invalid or expired'); } }
+ async logout(token?:string) { if(token) await this.repo.revokeRefreshToken(hashToken(token)); }
+ async me(id:string) { const user=await this.repo.findById(id); if(!user) throw new AppError(401,'UNAUTHORIZED','Authentication required'); return user; }
+ async verifyAccess(token:string) { try { const result=await jwtVerify(token,accessKey); const id=result.payload.sub; if(!id) throw new Error('missing'); return this.me(id); } catch (e) { if(e instanceof AppError) throw e; throw new AppError(401,'INVALID_TOKEN','Access token is invalid or expired'); } }
+ private async access(user:User) { return new SignJWT({ roles:user.roles }).setProtectedHeader({alg:'HS256'}).setSubject(user.id).setIssuedAt().setExpirationTime(env.ACCESS_TOKEN_TTL).sign(accessKey); }
+ private async issueRefresh(user:User) { const raw=randomToken(); const expires=new Date(Date.now()+env.REFRESH_TOKEN_DAYS*86400000); await this.repo.storeRefreshToken(user.id,hashToken(raw),expires); return raw; }
+}

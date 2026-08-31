@@ -1,0 +1,16 @@
+NODE_ENV=development
+PORT=3000
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/backend_driya
+DB_PROVIDER=postgresql
+DB_ACCESS_MODE=raw
+JWT_ACCESS_SECRET=replace-with-a-long-random-access-secret-at-least-32-characters
+JWT_REFRESH_SECRET=replace-with-a-long-random-refresh-secret-at-least-32-characters
+ACCESS_TOKEN_TTL=15m
+REFRESH_TOKEN_DAYS=7
+CORS_ORIGIN=http://localhost:5173
+COOKIE_SECURE=false
+MAIL_HOST=localhost
+MAIL_PORT=1025
+MAIL_FROM=noreply@backend-driya.local
+SEED_ADMIN_EMAIL=admin@example.test
+SEED_ADMIN_PASSWORD=ChangeMe123!

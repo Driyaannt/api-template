@@ -1,0 +1,10 @@
+import { Router } from 'express'; import { z } from 'zod'; import { AuthService } from './auth.service.js'; import { createAuthRepository } from './auth.factory.js'; import { AppError } from '../../errors/app-error.js'; import { env } from '../../config/env.js';
+const router=Router(); const service=new AuthService(createAuthRepository()); const cookie={httpOnly:true,secure:env.COOKIE_SECURE,sameSite:'lax' as const,path:'/api/v1/auth'};
+const register=z.object({name:z.string().min(2).max(100),email:z.string().email(),password:z.string().min(8).max(128)});
+const respond=(res:import('express').Response,message:string,data:unknown,status=200)=>res.status(status).json({success:true,message,data});
+router.post('/register',async(req,res,next)=>{try { const user=await service.register(register.parse(req.body)); respond(res,'Registered successfully',user,201); }catch(e){next(e);}});
+router.post('/login',async(req,res,next)=>{try { const body=register.pick({email:true,password:true}).parse(req.body); const result=await service.login(body.email,body.password); res.cookie('refreshToken',result.refreshToken,cookie); respond(res,'Login successful',{user:result.user,accessToken:result.accessToken}); }catch(e){next(e);}});
+router.post('/refresh',async(req,res,next)=>{try { const token=req.cookies.refreshToken; if(!token) throw new AppError(401,'MISSING_REFRESH_TOKEN','Refresh token is required'); const result=await service.refresh(token); res.cookie('refreshToken',result.refreshToken,cookie); respond(res,'Token refreshed',{user:result.user,accessToken:result.accessToken}); }catch(e){next(e);}});
+router.post('/logout',async(req,res,next)=>{try {await service.logout(req.cookies.refreshToken);res.clearCookie('refreshToken',cookie);respond(res,'Logout successful',null);}catch(e){next(e);}});
+router.get('/me',async(req,res,next)=>{try {const auth=req.header('authorization');if(!auth?.startsWith('Bearer '))throw new AppError(401,'UNAUTHORIZED','Bearer token required');respond(res,'Profile retrieved successfully',await service.verifyAccess(auth.slice(7)));}catch(e){next(e);}});
+export { router as authRouter };

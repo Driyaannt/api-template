@@ -1,0 +1,37 @@
+{
+  "name": "backend-driya",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.12.1",
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,magenta \"pnpm --filter @backend-driya/api dev\" \"pnpm --filter @backend-driya/web dev\"",
+    "build": "pnpm -r build",
+    "test": "pnpm --filter @backend-driya/api test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write .",
+    "setup": "tsx database/scripts/setup.ts",
+    "db:migrate": "tsx database/scripts/migrate.ts up",
+    "db:migrate:status": "tsx database/scripts/migrate.ts status",
+    "db:migrate:rollback": "tsx database/scripts/migrate.ts down",
+    "db:seed": "tsx database/scripts/seed.ts",
+    "db:reset": "pnpm db:migrate:rollback && pnpm db:migrate && pnpm db:seed",
+    "db:generate": "prisma generate --schema database/prisma/schema.prisma",
+    "db:studio": "prisma studio --schema database/prisma/schema.prisma",
+    "test:db-adapters": "cross-env DB_ACCESS_MODE=raw pnpm test",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.33.0",
+    "@typescript-eslint/parser": "^8.33.0",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "prettier": "^3.5.3",
+    "prisma": "^6.10.1",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}
