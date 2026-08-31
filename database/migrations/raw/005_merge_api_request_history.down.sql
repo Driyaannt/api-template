@@ -1,0 +1,5 @@
+CREATE TABLE api_request_drafts (id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,endpoint_id uuid NOT NULL REFERENCES api_endpoints(id) ON DELETE CASCADE,body jsonb NOT NULL,updated_at timestamptz NOT NULL DEFAULT now(),UNIQUE(user_id,endpoint_id));
+CREATE TABLE api_request_results (id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,endpoint_id uuid NOT NULL REFERENCES api_endpoints(id) ON DELETE CASCADE,request_path varchar(500) NOT NULL,status_code integer NOT NULL,response jsonb NOT NULL,updated_at timestamptz NOT NULL DEFAULT now(),UNIQUE(user_id,endpoint_id));
+INSERT INTO api_request_drafts(user_id,endpoint_id,body,updated_at) SELECT user_id,endpoint_id,request_body,updated_at FROM api_request_history WHERE request_body IS NOT NULL;
+INSERT INTO api_request_results(user_id,endpoint_id,request_path,status_code,response,updated_at) SELECT user_id,endpoint_id,request_path,response_status,response_body,updated_at FROM api_request_history WHERE response_body IS NOT NULL;
+DROP TABLE api_request_history;

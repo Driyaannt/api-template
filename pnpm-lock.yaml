@@ -7,6 +7,16 @@ settings:
 importers:
 
   .:
+    dependencies:
+      argon2:
+        specifier: ^0.41.1
+        version: 0.41.1
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.6.1
+      pg:
+        specifier: ^8.16.0
+        version: 8.23.0
     devDependencies:
       '@types/node':
         specifier: ^24.0.0

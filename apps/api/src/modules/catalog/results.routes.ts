@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { z } from 'zod';
+import { query } from '../../database/raw/pool.js';
+import { AppError } from '../../errors/app-error.js';
+import { authenticate } from '../../middlewares/authenticate.js';
+const router=Router();const id=z.string().uuid();const input=z.object({path:z.string().min(1).max(500),statusCode:z.number().int().min(100).max(599),response:z.unknown()});
+const redact=(value:unknown):unknown=>{if(Array.isArray(value))return value.map(redact);if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value as Record<string,unknown>).map(([key,item])=>(/password|token|secret/i.test(key)?[key,'[redacted]']:[key,redact(item)])));return value;};
+router.get('/',authenticate,async(req,res,next)=>{try{const result=await query<{endpoint_id:string;request_path:string;status_code:number;response:unknown;updated_at:Date}>('SELECT endpoint_id,request_path,status_code,response,updated_at FROM api_request_results WHERE user_id=$1',[req.user!.id]);res.json({success:true,message:'Results retrieved successfully',data:result.rows});}catch(error){next(error);}});
+router.put('/:endpointId',authenticate,async(req,res,next)=>{try{const endpointId=id.parse(req.params.endpointId);const data=input.parse(req.body);const endpoint=await query<{module:string}>('SELECT module FROM api_endpoints WHERE id=$1',[endpointId]);if(!endpoint.rows[0])throw new AppError(404,'ENDPOINT_NOT_FOUND','Endpoint not found');if(endpoint.rows[0].module==='Authentication')throw new AppError(400,'SENSITIVE_RESULT','Authentication responses cannot be saved');await query('INSERT INTO api_request_results(user_id,endpoint_id,request_path,status_code,response) VALUES($1,$2,$3,$4,$5::jsonb) ON CONFLICT(user_id,endpoint_id) DO UPDATE SET request_path=EXCLUDED.request_path,status_code=EXCLUDED.status_code,response=EXCLUDED.response,updated_at=NOW()',[req.user!.id,endpointId,data.path,data.statusCode,JSON.stringify(redact(data.response))]);res.json({success:true,message:'Result saved successfully',data:null});}catch(error){next(error);}});
+export { router as resultsRouter };
