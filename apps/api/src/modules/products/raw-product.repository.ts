@@ -63,8 +63,27 @@ export class RawProductRepository implements ProductRepository {
     );
     return result.rows[0] ? map(result.rows[0]) : null;
   }
-  async create(input: { name:string; sku:string; description?:string; price:number; stock:number; status:Product['status']; createdBy:string }): Promise<Product> {
-    const result = await query<Row>(`INSERT INTO products(name,sku,description,price,stock,status,created_by) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id,name,sku,description,price,stock,status,created_by,created_at,updated_at,'0'::text AS total_count`,[input.name,input.sku,input.description??null,input.price,input.stock,input.status,input.createdBy]);
+  async create(input: {
+    name: string;
+    sku: string;
+    description?: string;
+    price: number;
+    stock: number;
+    status: Product["status"];
+    createdBy: string;
+  }): Promise<Product> {
+    const result = await query<Row>(
+      `INSERT INTO products(name,sku,description,price,stock,status,created_by) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id,name,sku,description,price,stock,status,created_by,created_at,updated_at,'0'::text AS total_count`,
+      [
+        input.name,
+        input.sku,
+        input.description ?? null,
+        input.price,
+        input.stock,
+        input.status,
+        input.createdBy,
+      ],
+    );
     return map(result.rows[0]);
   }
 }

@@ -29,5 +29,13 @@ export interface PaginatedProducts {
 export interface ProductRepository {
   findAll(query: ProductListQuery): Promise<PaginatedProducts>;
   findById(id: string): Promise<Product | null>;
-  create(input: { name:string; sku:string; description?:string; price:number; stock:number; status:ProductStatus; createdBy:string }): Promise<Product>;
+  create(input: {
+    name: string;
+    sku: string;
+    description?: string;
+    price: number;
+    stock: number;
+    status: ProductStatus;
+    createdBy: string;
+  }): Promise<Product>;
 }

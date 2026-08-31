@@ -15,8 +15,31 @@ const querySchema = z.object({
     .default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });
-const createSchema=z.object({name:z.string().min(2).max(160),sku:z.string().min(2).max(80),description:z.string().max(2000).optional(),price:z.coerce.number().nonnegative(),stock:z.coerce.number().int().nonnegative(),status:z.enum(['ACTIVE','INACTIVE','DRAFT']).default('ACTIVE')});
-router.post('/',authenticate,async(req,res,next)=>{try{const product=await repository.create({...createSchema.parse(req.body),createdBy:req.user!.id});res.status(201).json({success:true,message:'Product created successfully',data:product});}catch(error){next(error);}});
+const createSchema = z.object({
+  name: z.string().min(2).max(160),
+  sku: z.string().min(2).max(80),
+  description: z.string().max(2000).optional(),
+  price: z.coerce.number().nonnegative(),
+  stock: z.coerce.number().int().nonnegative(),
+  status: z.enum(["ACTIVE", "INACTIVE", "DRAFT"]).default("ACTIVE"),
+});
+router.post("/", authenticate, async (req, res, next) => {
+  try {
+    const product = await repository.create({
+      ...createSchema.parse(req.body),
+      createdBy: req.user!.id,
+    });
+    res
+      .status(201)
+      .json({
+        success: true,
+        message: "Product created successfully",
+        data: product,
+      });
+  } catch (error) {
+    next(error);
+  }
+});
 router.get("/", async (req, res, next) => {
   try {
     const result = await repository.findAll(querySchema.parse(req.query));
