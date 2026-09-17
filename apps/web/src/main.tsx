@@ -23,6 +23,7 @@ type H = {
 };
 const hasBody = (m: string) => ["POST", "PUT", "PATCH"].includes(m),
   auth = (t: string) => ({ Authorization: `Bearer ${t}` });
+type Theme = "dark" | "light";
 function Login({ done }: { done: (t: string) => void }) {
   const [e, se] = useState("admin@example.test"),
     [p, sp] = useState(""),
@@ -80,7 +81,17 @@ function Login({ done }: { done: (t: string) => void }) {
     </main>
   );
 }
-function Explorer({ token, logout }: { token: string; logout: () => void }) {
+function Explorer({
+  token,
+  logout,
+  theme,
+  toggleTheme,
+}: {
+  token: string;
+  logout: () => void;
+  theme: Theme;
+  toggleTheme: () => void;
+}) {
   const [es, ses] = useState<E[]>([]),
     [hs, shs] = useState<Record<string, H>>({}),
     [open, so] = useState<Record<string, boolean>>({}),
@@ -189,9 +200,19 @@ function Explorer({ token, logout }: { token: string; logout: () => void }) {
       <aside>
         <div className="side-head">
           <h2>API tersedia</h2>
-          <button className="logout" onClick={logout}>
-            Keluar
-          </button>
+          <div className="side-actions">
+            <button
+              className="theme-toggle"
+              onClick={toggleTheme}
+              aria-label={theme === "dark" ? "Aktifkan mode terang" : "Aktifkan mode gelap"}
+              title={theme === "dark" ? "Mode terang" : "Mode gelap"}
+            >
+              <span aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span>
+            </button>
+            <button className="logout" onClick={logout}>
+              Keluar
+            </button>
+          </div>
         </div>
         <input
           className="endpoint-search"
@@ -236,7 +257,17 @@ function Explorer({ token, logout }: { token: string; logout: () => void }) {
       <div className="panel">
         <h1>API Explorer</h1>
         {!s ? (
-          <p>Pilih API dari daftar di kiri.</p>
+          <div className="explorer-empty-state">
+            <div className="explorer-credit" aria-label="Created by yaps 2026">
+              <span className="credit-mark">Y</span>
+              <span className="credit-rule" />
+              <p>
+                <span>Created by</span>
+                <strong>yaps</strong>
+                <em>2026</em>
+              </p>
+            </div>
+          </div>
         ) : (
           <>
             <p>{s.description}</p>
@@ -267,7 +298,14 @@ function Explorer({ token, logout }: { token: string; logout: () => void }) {
 }
 function App() {
   const [t, st] = useState(localStorage.getItem("accessToken") ?? ""),
-    [confirm, setConfirm] = useState(false);
+    [confirm, setConfirm] = useState(false),
+    [theme, setTheme] = useState<Theme>(
+      () => (localStorage.getItem("theme") as Theme | null) ?? "dark",
+    );
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("theme", theme);
+  }, [theme]);
   useEffect(() => {
     const copy = async (event: MouseEvent) => {
       const element =
@@ -313,7 +351,12 @@ function App() {
           path="/explorer"
           element={
             t ? (
-              <Explorer token={t} logout={logout} />
+              <Explorer
+                token={t}
+                logout={logout}
+                theme={theme}
+                toggleTheme={() => setTheme((v) => (v === "dark" ? "light" : "dark"))}
+              />
             ) : (
               <Navigate to="/login" />
             )
